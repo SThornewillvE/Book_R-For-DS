@@ -1,0 +1,103 @@
+---
+title: "R4DS - Data Import"
+author: "Simon Thornewill von Essen"
+date: "9 3 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+In this chapter, we'll have a look at importing data.
+
+There are multiple ways to read in data, but the most important way is through csv files, which are the most common filetype. (This is done with `read_csv()`)
+
+Sometimes you might also get fixed width files (fwf), so you should also know that you can use `read_fwf()`.
+
+If you've used base-R then you might wonder about the differences between `read.csv()` and `read_csv()`. I actually didnt realise that `read_csv()` is a readr function until now.
+
+* The readr function is faster
+* It produces a tibble
+* Its more reproducible
+
+## Parse Functions
+
+Before going further, we should learn about `parse_*()` functions such as `parse_logical`, `parse_integer` and `parse_date` since they are important building blocks of readr.
+
+The first argument is always the vector to be parsed, as well as an na parameters to search for missing values.
+
+```{r}
+parse_integer(c("1", "231", ".", "456"), na=".")
+```
+
+## Numbers
+
+When it comes to parsing numbers, it can be a pain because different parts of the world switch around `.` and `,` and they can often be followed by units such as `$` or `%`which make them a pain to interpret.
+
+```{r}
+parse_double("1,23", locale = locale(decimal_mark = ","))
+```
+
+```{r}
+parse_number("$100")
+```
+
+```{r}
+parse_number("It cost $123.45")
+```
+
+Note that readr is able to handle all of these cases flawlessly.
+
+The `read_character` function is also able to handle multiple languages and character that don't belong to the standard english.
+
+```{r}
+x2 <- "\x82\xb1\x82\xf1\x82\xc9\x82\xbf\x82\xcd"
+
+parse_character(x2, locale = locale(encoding = "Shift-JIS"))
+```
+
+Note that readr can also guess the encoding of an input string, which is very handy.
+
+```{r}
+# guess_encoding(charToRaw(x2))
+
+parse_character(x2, locale = locale(encoding = "KOI8-R"))
+```
+
+Didn't work particularly well in this case, but it was also not super confident about his choice.
+
+Note that we can also parse factors, as well as dates, datetimes and times.
+
+```{r}
+parse_date("2019-01-01")
+```
+
+Note that if you use a different format, you can pass the format to the parser
+
+```{r}
+parse_date("2019/01/01", "%Y/%m/%d")
+```
+
+If you are parsing from a language, you can also specifcy the language
+
+```{r}
+parse_date("1 janvier 2015", "%d %B %Y", locale = locale("fr"))
+```
+
+Note that this locale variable is similar with how you might parse a localse with other parse function, which makes learning
+all of this a little easier.
+
+If readr has a hard time using its heuristics to figure out what column type a column should be, you can also pass the `col_types` variable with `cols(x = col_double(), y=col_date())` as an example.
+
+## Writing to a file
+
+Finally, if you cant to spit out a csv you can use the `write_csv()` function. You can even export to an excel file as well with `write_excel_csv()`. You can also write to rds, which is R's custom binary format, with `write_rds()`.
+
+Note that you might need other functions as well in the case that you need to read:
+
+* SPSS, Stata or SAS files $\rightarrow$ `haven`
+* xlsx and xls files $\rightarrow$ `readxl`
+* Relational databases $\rightarrow$ `DBI`
