@@ -1,0 +1,144 @@
+---
+title: "R4DS - Exploratory Data Analysis"
+author: "Simon Thornewill von Essen"
+date: "3/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(hexbin)
+```
+
+## What is EDA
+
+EDA is the cycle of asking questions about the data, answering these questions through data analysis and then using
+what we learned to generate new questions. As we continue to go through this cycle, we hopefully start to understand
+our data on a deeper level.
+
+Note that this is a creative process that depends a lot of skill and experience as well as asking the right questions
+instead of having a lot of "low quality" questions.
+
+## Variation
+
+As an example, the first questions we tend to ask about our data are ones of variation. "How does x change with respect
+to y?" 
+
+Variables can be categorical, such as we see below...
+
+```{r}
+ggplot(data=diamonds) + 
+  geom_bar(mapping = aes(x=cut))
+```
+
+Note that we can get this bar chart in a table by using dplyr:
+
+```{r}
+diamonds %>%
+  count(cut)
+```
+
+We can also get continuous variables
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(mapping = aes(x = carat), binwidth = 0.5)
+```
+
+So, how would we generate this histogram in tabular format? The `count` function allows us to `cut_width` to create
+bins which we then use for counting
+
+```{r}
+diamonds %>% 
+  count(cut_width(carat, 0.5))
+```
+
+Note that setting the binwidth is something that is usually done through trial and error and can be difficult to set
+algorithmically. 
+
+## Typical Values
+
+We can use histograms to show which values are more frqeunt than others and which don't appear at all:
+
+```{r}
+smaller <- diamonds %>%
+  filter(carat < 3)
+
+
+ggplot(data = smaller, mapping = aes(x = carat)) +
+  geom_histogram(binwidth = 0.01)
+```
+
+This histogram poses a couple of questions:
+
+* Why are there more diamonds at whole carats rather than fractions?
+* Why are there more carats slightly to the right than to the left of each peack?
+* Why are there no diamonds bigger than 3 carats?
+
+## Covariation
+
+If variabtion explains variance within a varaible, covariation explains variance between variables, this is to plot for trends of multiple features to behave in a similar way.
+
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = price, y = ..density..)) + 
+  geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)
+```
+
+Here, we can see the average price for fair diamonds are the highest, which is quite surprising. This might be because
+frequency polygons are a little difficult to inpterpret.
+
+We can use a boxplot to help us to visualise distributions.
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+  geom_boxplot(aes(fill=cut))
+```
+
+There is less information about the distribution than the linechart shown above, but at least this way the information is more
+compact and easier to understand.
+
+You might also want to understand how the cut correlated with color, these are two categorical variables which can be visualised using a scatter plot
+
+```{r}
+ggplot(data=diamonds) + 
+  geom_count(mapping=aes(x=cut, y=color))
+```
+
+The only difficulty is that the size of a dot can be hard to interpret, we can also use a tile geom to help us to figure things
+out using colours.
+
+```{r}
+diamonds %>% 
+  count(color, cut) %>%  # I dintk now you could pipe directly into a ggplot
+  ggplot(mapping = aes(x = color, y = cut)) +
+    geom_tile(mapping = aes(fill = n))
+```
+
+We can also create scatterplots for continuous variables
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = carat, y = price))
+```
+
+Note that here we get some overplotting, if we reduce the alpha then we can plot all of the data without things getting to 
+noisey, reducing the alpha can help a lot with identifying underlying trends.
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_point(mapping = aes(x = carat, y = price), alpha = 1 / 100)
+```
+
+However, for large datasets, reducing the alpha can be quite expensive and it might be more useful to bin information together.
+
+```{r}
+ggplot(data = smaller) +
+  geom_hex(mapping = aes(x = carat, y = price))
+```
+
+Note that these tools are very powerful for data scientists because it allows us to understand the data which allows us to 
+build models for prediction.

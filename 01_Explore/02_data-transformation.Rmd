@@ -1,0 +1,203 @@
+---
+title: "R4DS - Data Tansformation"
+author: "Simon Thornewill von Essen"
+date: "3/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(nycflights13)
+library(tidyverse)
+```
+
+Alright, so data visualisation can help us to understand our data relatively quickly. The only issue is that we rarely
+get the data in the format that we need. Towards, this end, we need to be able to manipulate data within R.
+
+The dataframe we'll be exploring is the `flights` dataframe
+
+```{r}
+head(flights)
+```
+
+Note that in addition to being a dataframe, this dataframe is also a tibble. 
+
+Note that the columns also have data types:
+
+* int $\leftarrow$ integer
+* dbl $\leftarrow$ double
+* chr $\leftarrow$ character/string
+* dttm $\leftarrow$ date-time
+
+There are also other variables that exist:
+
+* lgl $\leftarrow$ boolean
+* fctr $\leftarrow$ factor
+* date $\leftarrow$ date
+
+## dplyr basics
+
+Here, we will use dplyr, which has the following useful functions:
+
+* filter
+* arrange
+* select
+* mutate
+* summarise
+
+All of these can be used in conjunction with `groupby`.
+
+The logical workflow is like this:
+
+1. You select the dataframe you want to work with
+2. The subsequent arguments say what you want to do with it
+3. You then get an output dataframe
+
+## Filtering
+
+Let's try and look at flgihts that take place on the first of jan
+
+```{r}
+filter(flights, month==1, day==1)
+```
+
+Can we also do it like this?
+
+```{r}
+flights %>% filter(month==1, day==1)
+```
+
+Yes! It also works like this. We can select a dataframe and then perform things on it using the `%>%` character.
+
+Now, let's save this to a new variable.
+
+```{r}
+jan1 <- flights %>% filter(month==1, day==1)
+```
+
+Note that if you use an NA then that will be propogated, you cannot check if a variable is NA simply by typing
+`var == NA` because the result will also be NA.
+
+Thus, you need to use the is.na function;
+
+```{r}
+is.na(NA)
+```
+
+## Order rows with arrange
+
+Next, if we want to view the flights from jan1 in some order, say we want to order by carrier, then we can use the 
+arrange function.
+
+```{r}
+arrange(jan1, carrier)
+```
+
+We can also chain these ideas together like so.
+
+```{r}
+flights %>% 
+  filter(month==1, day==1) %>% 
+  arrange(carrier)
+```
+
+## Select with select
+
+Afterwards, we can select relevant columns that we are interetsed in
+
+```{r}
+flights %>% 
+  filter(month==1, day==1) %>% 
+  arrange(carrier) %>%
+  select(year, month, day)
+```
+
+Note that we can change the order as well
+
+```{r}
+flights %>% 
+  arrange(carrier) %>%
+  select(year, month, day) %>% 
+  filter(month==1, day==1) 
+```
+
+Note that there are interesting helper functions we can use within select
+
+* `starts_with` matches names that start with a string
+* `ends_with` matches names that end with a string
+* `contains`: matches names that contains a string
+* `matches`: matches columns with a regular expression
+* `num_range`: appends numbers in a sequence at at the end of a string and searches the columns for that
+
+You can also reorder a dataframe by using `everything`, which will select the rest of the columns that are not 
+mentioned.
+
+As an example, you could do the following:
+
+```{r}
+flights %>%
+  rename(date_year=year, date_month=month, date_day=day) %>%
+  select(starts_with("date_"), everything())
+```
+
+## Mutate
+
+Alright, so we know how to slect, order and filter, but what about if we want to make a new column
+
+For this, we use the mutate function:
+
+```{r}
+flights %>%
+  select(year:day,
+         ends_with("delay"),
+         distance,
+         air_time) %>%
+  mutate(gain = dep_delay - arr_delay,
+         speed = distance / air_time * 60)
+```
+
+Now, we have two columns for gain and speed, which we got from mutating columns that we already had.
+
+If we only want to keep the variables we mutate, we can also transmute them:
+
+```{r}
+flights %>%
+  select(year:day,
+         ends_with("delay"),
+         distance,
+         air_time) %>%
+  transmute(gain = dep_delay - arr_delay,
+         speed = distance / air_time * 60)
+```
+
+Note that the mutate function also accepts lag and lead functions, which can be very handy. It can also calculate
+cumulative values as well was row numbers and this kind of thing.
+
+## Summarise
+
+Finally, after all of that, we can aggregate our data to get summaries.
+
+```{r}
+summarise(flights, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+We can pair `summarise` with `groupby` which will select only certain columns to group on for aggregations.
+
+Note that summarise allows you to use multiple aggregations (or even functions, it seems) as an input so that you dont
+need to use only one aggregations like you might by grouping a pandas dataframe in python.
+
+Some interesting functions to use are:
+
+* mean
+* median
+* sd
+* IQR
+* mad (mean absolute deviation, I guess)
+* min
+* max
+* quantile
+* first
+* nth
+* last
+* n (returns size of group)
