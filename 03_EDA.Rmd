@@ -1,0 +1,59 @@
+---
+title: "R4DS - Exploratory Data Analysis"
+author: "Simon Thornewill von Essen"
+date: "3/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+## What is EDA
+
+EDA is the cycle of asking questions about the data, answering these questions through data analysis and then using
+what we learned to generate new questions. As we continue to go through this cycle, we hopefully start to understand
+our data on a deeper level.
+
+Note that this is a creative process that depends a lot of skill and experience as well as asking the right questions
+instead of having a lot of "low quality" questions.
+
+## Variation
+
+As an example, the first questions we tend to ask about our data are ones of variation. "How does x change with respect
+to y?" 
+
+Variables can be categorical, such as we see below...
+
+```{r}
+ggplot(data=diamonds) + 
+  geom_bar(mapping = aes(x=cut))
+```
+
+Note that we can get this bar chart in a table by using dplyr:
+
+```{r}
+diamonds %>%
+  count(cut)
+```
+
+We can also get continuous variables
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(mapping = aes(x = carat), binwidth = 0.5)
+```
+
+So, how would we generate this histogram in tabular format? The `count` function allows us to `cut_width` to create
+bins which we then use for counting
+
+```{r}
+diamonds %>% 
+  count(cut_width(carat, 0.5))
+```
+
+Note that setting the binwidth is something that is usually done through trial and error and can be difficult to set
+algorithmically. 
+
