@@ -1,0 +1,80 @@
+---
+title: "R4DS - Tidy Data"
+author: "Simon Thornewill von Essen"
+date: "9 3 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+One thing that the tidyverse does is expect the data to be in a certain format. This is powerful because if the data is in a format that can be consistently expected then lots of functions can be written around that.
+
+This format is called "tidy" data. Data is tidy when each column represents a single variable and each row represents a single observation and each cell contains a single value.
+
+Note that when two of these conditions are met, the third is implied. 
+
+## Pivoting Data
+
+The only issue is that our data won't always be in this representation, consider the following table.
+
+```{r}
+print(table4a)
+```
+
+We can see here that there are two columns for the year, but this then means that the data isn't tidy. How can we take these columns and stack them?
+
+We can do this using the `pivot_longer` function to melt the columns.
+
+```{r}
+table4a_longer <- table4a %>%
+  pivot_longer(c("1999", "2000"), names_to="year", values_to="cases")
+
+print(table4a_longer)
+```
+
+It's really handy to know how to do something like this. We can then join on other tables to slowly build our dataset.
+
+```{r}
+tidy4b <- table4b %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "population")
+
+table4a_longer %>%
+  left_join(tidy4b)
+```
+
+Obviously, the opposite is to pivot the data using `pivot_wider`.
+
+```{r}
+table2
+```
+
+
+```{r}
+table2 %>%
+  pivot_wider(names_from = type, values_from = count)
+```
+
+What format you want your dataset in depends a little on your application. But this is the general gist of it.
+
+## Separating and unifying columns
+
+The issue with `table3` requires something more sophisticated to tidy the data
+
+```{r}
+table3
+```
+
+We can see here that the rate is a fraction of two numbers. We should create separate columns for these two because it gives us the most flexibility with what we can use for data for.
+
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+```
+
+From here, we might want to consider melting these columns again.
+
+There are multiple ways you might separate the columns, but I leave that for the documentation. `?separate`
